@@ -100,12 +100,34 @@ A prompt version ships when:
 
 ## Quick Start
 
+### 1. Clone and set up a virtual environment
+
 ```bash
 git clone https://github.com/yourusername/compliance-copilot
 cd compliance-copilot
+
+# Create a virtual environment (Python 3.10+ recommended)
+python -m venv .venv
+
+# Activate it:
+#   macOS/Linux:
+source .venv/bin/activate
+#   Windows (cmd):
+#   .venv\Scripts\activate.bat
+#   Windows (PowerShell):
+#   .venv\Scripts\Activate.ps1
+```
+
+### 2. Install dependencies and configure
+
+```bash
 pip install -r requirements.txt
 cp .env.example .env  # add your ANTHROPIC_API_KEY
 ```
+
+Keep the virtual environment activated for all commands below.
+
+### 3. Run the agent and tools
 
 **Run the agent directly:**
 ```bash
