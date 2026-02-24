@@ -1,0 +1,228 @@
+[
+  {
+    "eval_id": "eval-001",
+    "control_id": "soc2-cc6.1",
+    "user_question": "We're a 50-person SaaS company on AWS preparing for our first SOC 2 Type II. What do we need for CC6.1 and what evidence should we collect?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "MFA enforcement for all users, especially privileged accounts",
+        "Centralized identity management (SSO or IAM Identity Center)",
+        "Formal access review process with documented results",
+        "Joiner/Mover/Leaver (JML) process with defined SLA for access revocation",
+        "IAM policies following least-privilege principle"
+      ],
+      "must_not_include": [
+        "Shared accounts are acceptable for small teams",
+        "Root account use is fine for day-to-day operations",
+        "Access reviews are optional for startups"
+      ],
+      "required_evidence_artifacts": [
+        "User access list or provisioning records",
+        "MFA configuration proof",
+        "Access review results with sign-off",
+        "Offboarding records with timestamps"
+      ],
+      "key_aws_services": ["IAM", "IAM Identity Center", "CloudTrail"],
+      "auditor_concerns": [
+        "Gap between termination and access revocation",
+        "No documented access review results",
+        "Root account usage"
+      ]
+    },
+    "rating_notes": "A high-quality response will be specific about the JML process and give concrete evidence artifacts. It should not suggest shared accounts are ever acceptable.",
+    "difficulty": "standard",
+    "tags": ["soc2", "access-control", "first-audit", "aws", "small-team"]
+  },
+  {
+    "eval_id": "eval-002",
+    "control_id": "soc2-cc6.1",
+    "user_question": "Our access review process is informal — we have a spreadsheet we update occasionally. Will this pass a SOC 2 audit?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "Access reviews must be periodic and documented (typically quarterly or semi-annually)",
+        "Reviews need evidence of completion with owner sign-off",
+        "Spreadsheet alone is insufficient without documented process and cadence",
+        "Auditors will ask for timestamps and evidence that reviews were acted upon"
+      ],
+      "must_not_include": [
+        "Spreadsheet tracking is fine without additional documentation",
+        "Informal processes are acceptable for SOC 2"
+      ],
+      "required_evidence_artifacts": [
+        "Dated access review reports",
+        "Owner sign-off documentation",
+        "Evidence of remediation actions taken based on review findings"
+      ],
+      "key_aws_services": ["IAM Access Analyzer", "IAM"],
+      "auditor_concerns": [
+        "No documented cadence or schedule",
+        "No evidence reviews were acted upon (no remediation tickets)",
+        "Spreadsheet modified without audit trail"
+      ]
+    },
+    "rating_notes": "Response should be direct: the informal process will likely not pass without formalization. Should give specific remediation steps, not just flag the problem.",
+    "difficulty": "standard",
+    "tags": ["soc2", "access-review", "audit-readiness", "process-maturity"]
+  },
+  {
+    "eval_id": "eval-003",
+    "control_id": "soc2-cc7.2",
+    "user_question": "We have GuardDuty enabled across all our AWS accounts, but our security team is small and we get hundreds of findings per week. How do we handle this for CC7.2?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "Findings must be triaged — having GuardDuty enabled is not sufficient without review",
+        "Suppression rules for known false positives should be documented",
+        "High-severity findings require documented investigation and remediation",
+        "Evidence of human review of findings (tickets, runbooks, response records)",
+        "Security Hub can aggregate and prioritize across accounts"
+      ],
+      "must_not_include": [
+        "Enabling GuardDuty alone satisfies CC7.2",
+        "It's acceptable to let findings accumulate without review"
+      ],
+      "required_evidence_artifacts": [
+        "GuardDuty finding review records or tickets",
+        "Suppression rules list with documented rationale",
+        "Incident response runbook referenced to findings",
+        "Security Hub dashboard showing finding disposition"
+      ],
+      "key_aws_services": ["GuardDuty", "Security Hub", "EventBridge", "SNS"],
+      "auditor_concerns": [
+        "Hundreds of unreviewed high-severity findings",
+        "No evidence of triage process",
+        "Alert fatigue with no suppression strategy"
+      ]
+    },
+    "rating_notes": "This is a real, common pain point. The response should acknowledge the alert fatigue problem directly and give a practical triage strategy, not just say 'review all findings.'",
+    "difficulty": "nuanced",
+    "tags": ["soc2", "monitoring", "guardduty", "alert-fatigue", "small-team"]
+  },
+  {
+    "eval_id": "eval-004",
+    "control_id": "soc2-cc9.2",
+    "user_question": "A vendor we use processes customer PII but they don't have a SOC 2 report. How do we handle this for our own SOC 2 audit?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "Alternatives to SOC 2 include ISO 27001 certification, penetration test results, or completed vendor security questionnaire (VSQ)",
+        "A Data Processing Agreement (DPA) is required for any vendor processing PII",
+        "Risk must be formally assessed and documented even without a SOC report",
+        "Management should accept or remediate the residual risk in writing",
+        "Auditors will ask what compensating controls exist"
+      ],
+      "must_not_include": [
+        "Vendors without SOC 2 cannot be used",
+        "This automatically fails a SOC 2 audit"
+      ],
+      "required_evidence_artifacts": [
+        "Vendor risk assessment record",
+        "Completed VSQ or alternative assurance documentation",
+        "Signed DPA",
+        "Management risk acceptance (if applicable)",
+        "Contract with security requirements"
+      ],
+      "key_aws_services": [],
+      "auditor_concerns": [
+        "No alternative assurance documentation",
+        "Missing DPA for PII processor",
+        "No formal risk acceptance documented"
+      ]
+    },
+    "rating_notes": "Response must not be alarmist. The right answer is compensating controls and documentation, not 'you can't use this vendor.' DPA is non-negotiable and should be called out specifically.",
+    "difficulty": "nuanced",
+    "tags": ["soc2", "tprm", "vendor-risk", "pii", "compensating-controls"]
+  },
+  {
+    "eval_id": "eval-005",
+    "control_id": "soc2-cc6.1",
+    "user_question": "Can we use a single shared admin account for our DevOps team on AWS to make things easier?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "Shared accounts are not acceptable for SOC 2 CC6.1",
+        "Individual accounts are required to maintain audit trail and accountability",
+        "CloudTrail cannot attribute actions to individuals with shared credentials",
+        "This would be a direct finding by any auditor",
+        "AWS IAM Identity Center allows individual federated access with temporary credentials"
+      ],
+      "must_not_include": [
+        "Shared accounts are fine if the team is small",
+        "Shared accounts are acceptable with compensating controls like logging"
+      ],
+      "required_evidence_artifacts": [
+        "Individual IAM user or Identity Center assignment records",
+        "CloudTrail logs attributable to individual users"
+      ],
+      "key_aws_services": ["IAM Identity Center", "CloudTrail"],
+      "auditor_concerns": [
+        "Inability to attribute actions to specific individuals",
+        "No individual accountability",
+        "Shared credentials cannot be selectively revoked"
+      ]
+    },
+    "rating_notes": "The response must be unambiguous: shared admin accounts fail SOC 2 and are not fixable with compensating controls. This is a test of whether the agent will give a clear, correct answer vs. hedging.",
+    "difficulty": "clear-cut",
+    "tags": ["soc2", "shared-accounts", "access-control", "common-mistake"]
+  },
+  {
+    "eval_id": "eval-006",
+    "control_id": "iso27001-a8.2",
+    "user_question": "We're implementing ISO 27001. Our data classification policy says we have four levels: Public, Internal, Confidential, and Restricted. How do we actually enforce this in AWS?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "AWS resource tagging with a mandatory 'data-classification' tag",
+        "Service Control Policies (SCPs) or Config rules to enforce tagging",
+        "Amazon Macie for automated discovery and classification of sensitive data in S3",
+        "S3 bucket policies tied to classification tags",
+        "Tag-based access controls in IAM policies"
+      ],
+      "must_not_include": [
+        "Manual classification processes are sufficient for ISO 27001",
+        "Classification only applies to documents, not cloud resources"
+      ],
+      "required_evidence_artifacts": [
+        "Resource tagging policy and enforcement rule",
+        "Macie findings and classification reports",
+        "Data inventory with classification levels",
+        "S3 bucket configuration showing controls per classification"
+      ],
+      "key_aws_services": ["Macie", "Config", "Organizations/SCPs", "S3", "IAM"],
+      "auditor_concerns": [
+        "Classification policy exists on paper but not enforced technically",
+        "Sensitive data found in unclassified or public buckets",
+        "No automated discovery process for new data"
+      ]
+    },
+    "rating_notes": "Response should bridge the gap between policy and technical enforcement. Macie + tagging + SCPs is the core answer. Should not just describe the policy — must explain how to enforce it.",
+    "difficulty": "technical",
+    "tags": ["iso27001", "data-classification", "aws", "enforcement", "macie"]
+  },
+  {
+    "eval_id": "eval-007",
+    "control_id": "soc2-cc7.2",
+    "user_question": "What is the meaning of life?",
+    "environment": "AWS",
+    "ground_truth": {
+      "must_include": [
+        "The agent should recognize this is not a compliance question",
+        "The agent should redirect to compliance topics",
+        "The agent should not hallucinate a compliance-related answer"
+      ],
+      "must_not_include": [
+        "42",
+        "Philosophical answer unrelated to compliance",
+        "A fabricated connection between the question and CC7.2"
+      ],
+      "required_evidence_artifacts": [],
+      "key_aws_services": [],
+      "auditor_concerns": []
+    },
+    "rating_notes": "Edge case test: the agent should gracefully handle off-topic questions without hallucinating a compliance connection. Confidence should be 'low' and context_gaps should note the mismatch.",
+    "difficulty": "edge-case",
+    "tags": ["edge-case", "off-topic", "hallucination-check"]
+  }
+]
