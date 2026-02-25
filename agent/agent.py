@@ -8,10 +8,15 @@ Wraps Anthropic API calls with:
 - Basic retry logic on parse failures
 """
 
+import argparse
 import json
 import os
+import sys
+import traceback
 from pathlib import Path
 from typing import Optional
+
+from dotenv import load_dotenv
 
 import anthropic
 from pydantic import ValidationError
@@ -23,6 +28,9 @@ from agent.prompts import (
     build_control_guidance_prompt,
 )
 from agent.schemas import ControlGuidanceResponse
+
+# Load .env from project root so ANTHROPIC_API_KEY is available
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 # ── Control Library ────────────────────────────────────────────────────────────
@@ -74,7 +82,7 @@ class ComplianceCopilot:
 
     def __init__(
         self,
-        model: str = "claude-opus-4-6",
+        model: str = "claude-sonnet-4-6",
         prompt_version: Optional[str] = None,
         max_retries: int = 2,
     ):
@@ -125,7 +133,7 @@ class ComplianceCopilot:
             try:
                 message = self.client.messages.create(
                     model=self.model,
-                    max_tokens=2048,
+                    max_tokens=8192,  # Response includes long lists; 2048 caused truncation → JSON parse errors
                     system=self.system_prompt,
                     messages=[{"role": "user", "content": prompt}],
                 )
@@ -181,24 +189,56 @@ class ComplianceCopilot:
 
 # ── CLI Quick Test ─────────────────────────────────────────────────────────────
 
+def _format_response(response: ControlGuidanceResponse, meta: dict) -> str:
+    """Build the full CLI output text from response and metadata."""
+    lines = [
+        "\n=== Compliance Copilot Response ===",
+        f"Control: {meta['framework']} {meta['control_id']}",
+        f"Prompt Version: {meta['prompt_version']} | Model: {meta['model']}",
+        f"Tokens: {meta['input_tokens']} in / {meta['output_tokens']} out\n",
+        f"Summary: {response.control_summary}\n",
+        f"Answer: {response.direct_answer}\n",
+        "Implementation Steps:",
+    ]
+    for i, step in enumerate(response.implementation_steps, 1):
+        lines.append(f"  {i}. {step}")
+    lines.append(f"\nConfidence: {response.confidence.value}")
+    if response.context_gaps:
+        lines.append(f"Context Gaps: {response.context_gaps}")
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run Compliance Copilot agent (demo query)")
+    parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default=Path("agent_output.txt"),
+        help="Write full output to this file (default: agent_output.txt)",
+    )
+    args = parser.parse_args()
+    out_path = args.output
+
     agent = ComplianceCopilot()
 
-    response, meta = agent.query(
-        control_query="CC6.1",
-        user_question="We're a 50-person SaaS company on AWS. We're about to go through our first SOC 2 Type II. What do we need to have in place for this control, and what evidence should we start collecting now?",
-        environment="AWS",
-    )
-
-    print(f"\n=== Compliance Copilot Response ===")
-    print(f"Control: {meta['framework']} {meta['control_id']}")
-    print(f"Prompt Version: {meta['prompt_version']} | Model: {meta['model']}")
-    print(f"Tokens: {meta['input_tokens']} in / {meta['output_tokens']} out\n")
-    print(f"Summary: {response.control_summary}\n")
-    print(f"Answer: {response.direct_answer}\n")
-    print(f"Implementation Steps:")
-    for i, step in enumerate(response.implementation_steps, 1):
-        print(f"  {i}. {step}")
-    print(f"\nConfidence: {response.confidence.value}")
-    if response.context_gaps:
-        print(f"Context Gaps: {response.context_gaps}")
+    try:
+        response, meta = agent.query(
+            control_query="CC6.1",
+            user_question="We're a 50-person SaaS company on AWS. We're about to go through our first SOC 2 Type II. What do we need to have in place for this control, and what evidence should we start collecting now?",
+            environment="AWS",
+        )
+        text = _format_response(response, meta)
+        out_path.write_text(text, encoding="utf-8")
+        print(text)
+        print(f"\n(Full output also written to {out_path})")
+    except Exception as e:
+        error_content = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+        if "Raw response:" in str(e):
+            error_content += "\n\n--- Raw API response (for debugging) ---\n"
+            # RuntimeError message includes "Raw response: ..." at the end
+            raw_part = str(e).split("Raw response:")[-1].strip()
+            error_content += raw_part
+        out_path.write_text(error_content, encoding="utf-8")
+        print(error_content, file=sys.stderr)
+        print(f"\nError and details written to {out_path}", file=sys.stderr)
+        sys.exit(1)

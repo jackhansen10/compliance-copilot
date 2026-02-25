@@ -23,7 +23,7 @@ Usage:
 import argparse
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import anthropic
@@ -82,7 +82,9 @@ def run_ground_truth_checks(
 
     must_not_include_results = []
     for item in ground_truth.get("must_not_include", []):
-        found = any(word.lower() in response_text for word in item.split() if len(word) > 4)
+        # Violation only if the full forbidden phrase appears (avoids false positives
+        # when the response correctly rejects the idea, e.g. "shared accounts are not acceptable")
+        found = item.lower() in response_text
         must_not_include_results.append({"item": item, "found": found})
 
     required_services = ground_truth.get("key_aws_services", [])
@@ -145,7 +147,8 @@ def run_eval_suite(
     """
     eval_cases = load_eval_set(eval_id)
     results = []
-    timestamp = datetime.utcnow().isoformat()
+    # Use timezone-aware UTC timestamps to avoid deprecation warnings
+    timestamp = datetime.now(UTC).isoformat()
 
     print(f"\n{'='*60}")
     print(f"Running {len(eval_cases)} eval cases")
@@ -220,7 +223,7 @@ def run_eval_suite(
     }
 
     # Save results
-    filename = f"eval_run_{prompt_version or 'active'}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+    filename = f"eval_run_{prompt_version or 'active'}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
     output_path = RESULTS_DIR / filename
     with open(output_path, "w") as f:
         json.dump(summary, f, indent=2)
